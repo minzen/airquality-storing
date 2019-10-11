@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "./build",
     "target": "es6",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -13,7 +14,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false,
     "noImplicitAny": false,
     "noImplicitThis": false,
     "strictNullChecks": false
