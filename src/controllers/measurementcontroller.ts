@@ -2,20 +2,33 @@ import * as express from 'express'
 import Measurement from './measurement'
 const dotenv = require('dotenv')
 dotenv.config()
+const mongoDbHost = process.env.MONGODB_HOST
+const mongoDbUser = process.env.MONGODB_USER
+const mongoDbPwd = encodeURIComponent(process.env.MONGODB_PWD)
+const mongodbDbName = process.env.MONGODB_DB
+const mongodbDbPort = process.env.MONGODB_PORT
+const mongoDbCollection = process.env.MONGODB_COLLECTION
 const assert = require('assert')
+const { check, validationResult } = require('express-validator')
+
+function isValidDate(val: string) {
+  const regExMatch = val.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
+  if (!regExMatch) {
+    return false
+  }
+
+  const date = new Date(val)
+  if (!date.getTime()) {
+    return false
+  }
+
+  return true
+}
 
 class MeasurementController {
-  public path = '/measurements'
+  public path: string = '/measurements'
   public router = express.Router()
   private MongoClient = require('mongodb').MongoClient
-
-  // private measurements: Measurement[] = [
-  //   {
-  //     date: new Date('2019-10-11T13:43:00'),
-  //     temperature: 21.3,
-  //     humidity: 55.4,
-  //   },
-  // ]
 
   constructor() {
     this.initializeRoutes()
@@ -23,16 +36,20 @@ class MeasurementController {
 
   public initializeRoutes() {
     this.router.get(this.path, this.getAllMeasurements)
-    this.router.post(this.path, this.createAMeasurement)
+    this.router.post(
+      this.path,
+      [
+        check('date')
+          .custom(isValidDate)
+          .withMessage('the date must be valid'),
+        check('temperature').isDecimal(),
+        check('humidity').isDecimal(),
+      ],
+      this.createAMeasurement,
+    )
   }
 
   private getDbConnectUrl() {
-    const mongoDbHost = process.env.MONGODB_HOST
-    const mongoDbUser = process.env.MONGODB_USER
-    const mongoDbPwd = encodeURIComponent(process.env.MONGODB_PWD)
-    const mongodbDbName = process.env.MONGODB_DB
-    const mongodbDbPort = process.env.MONGODB_PORT
-
     const url =
       'mongodb://' +
       mongoDbUser +
@@ -45,7 +62,7 @@ class MeasurementController {
       '/' +
       mongodbDbName +
       '?authMechanism=DEFAULT&AuthSource=airqualitydb'
-    console.log(url)
+    console.log('Connection URL', url.substring(0, 10), '...')
     return url
   }
 
@@ -54,60 +71,69 @@ class MeasurementController {
     response: express.Response,
   ) => {
     const connectUrl = this.getDbConnectUrl()
-    console.log('connectUrl', connectUrl)
+    // console.log('connectUrl', connectUrl)
     this.MongoClient.connect(
       connectUrl,
       { useNewUrlParser: true, useUnifiedTopology: true },
       (err: Error, db) => {
         assert.equal(null, err)
-        console.log('Connected to the Server')
+        console.log('Connected to the Server', mongoDbHost)
 
         console.log('Carrying out a query...')
-        let dbo = db.db('airqualitydb')
+        let dbo = db.db(mongodbDbName)
         dbo
-          .collection('measurement')
+          .collection(mongoDbCollection)
           .find({})
           .toArray((err: Error, result) => {
             if (err) {
               throw err
             }
-            console.log('result:', result)
+            console.log('Results for the query obtained:', result)
             response.send(result)
           })
-        db.close()
         console.log('DB connection closed')
+        db.close()
       },
     )
   }
 
   createAMeasurement = (
-    // TODO: Sanitize the user input
     request: express.Request,
     response: express.Response,
   ) => {
-    const measurement: Measurement = request.body
+    const result = validationResult(request)
+    if (!result.isEmpty()) {
+      console.log('validation result', result)
+      response.status(422)
+      response.send({ errors: result.array() })
+      return
+    }
+    const measurement: Measurement = {
+      date: request.body.date,
+      temperature: request.body.temperature,
+      humidity: request.body.humidity,
+    }
     console.log('Storing measurement', measurement, 'to the database')
     const connectUrl = this.getDbConnectUrl()
-    console.log('connectUrl', connectUrl)
+    // console.log('connectUrl', connectUrl)
     this.MongoClient.connect(
       connectUrl,
       { useNewUrlParser: true, useUnifiedTopology: true },
       (err: Error, db) => {
         assert.equal(null, err)
-        console.log('Connected to the Server')
-
+        console.log('Connected to the Server ', mongoDbHost)
         console.log('Creating a measurement in the DB')
-        let dbo = db.db('airqualitydb')
+        let dbo = db.db(mongodbDbName)
         dbo
-          .collection('measurement')
-          .insertOne(measurement, (err: Error, res: express.Response) => {
+          .collection(mongoDbCollection)
+          .insertOne(measurement, (err: Error, response: express.Response) => {
             if (err) {
               throw err
             }
-            console.log('1 measurement inserted')
-            db.close()
-            response.send(measurement)
           })
+        console.log('1 measurement inserted')
+        db.close()
+        response.send(measurement)
       },
     )
   }

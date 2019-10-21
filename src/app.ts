@@ -1,5 +1,6 @@
 import * as express from 'express'
 import * as bodyParser from 'body-parser'
+const helmet = require('helmet')
 
 class App {
   public app: express.Application
@@ -12,9 +13,10 @@ class App {
     this.initializeMiddlewares()
     this.initializeControllers(controllers)
   }
- 
+
   private initializeMiddlewares() {
     this.app.use(bodyParser.json())
+    this.app.use(helmet())
   }
 
   private initializeControllers(controllers) {
@@ -30,4 +32,3 @@ class App {
   }
 }
 export default App
-
