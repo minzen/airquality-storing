@@ -10,6 +10,7 @@ const mongodbDbPort = process.env.MONGODB_PORT
 const mongoDbCollection = process.env.MONGODB_COLLECTION
 const assert = require('assert')
 const { check, validationResult } = require('express-validator')
+const jwt = require('jsonwebtoken')
 
 function isValidDate(val: string) {
   const regExMatch = val.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
@@ -101,6 +102,24 @@ class MeasurementController {
     request: express.Request,
     response: express.Response,
   ) => {
+    // Check for the JWT; if not available, do not allow access
+    const token = this.getTokenFromRequest(request)
+    console.log('token from request', token)
+    try {
+      console.log(process.env.SECRET)
+      const decodedToken = jwt.verify(token, process.env.SECRET)
+      console.log('decodedToken', decodedToken)
+      if (!token || !decodedToken.id) {
+        console.log('access token', token)
+        response.status(401).json({ error: 'token missing or invalid' })
+        return
+      }
+    } catch (err) {
+      console.log(err)
+      response.status(401).json({ error: 'token missing or invalid' })
+      return
+    }
+
     const result = validationResult(request)
     if (!result.isEmpty()) {
       console.log('validation result', result)
@@ -136,6 +155,14 @@ class MeasurementController {
         response.send(measurement)
       },
     )
+  }
+
+  private getTokenFromRequest(request) {
+    const authorization = request.get('authorization')
+    if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+      return authorization.substring(7)
+    }
+    return null
   }
 }
 export default MeasurementController

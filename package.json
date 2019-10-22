@@ -39,6 +39,7 @@
     "express-sanitizer": "^1.0.5",
     "express-validator": "^6.2.0",
     "helmet": "^3.21.1",
+    "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.3.2",
     "npm-watch": "^0.6.0",
     "saslprep": "^1.0.3",

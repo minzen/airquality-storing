@@ -14,6 +14,12 @@ class App {
     this.initializeControllers(controllers)
   }
 
+  public listen() {
+    this.app.listen(this.port, () => {
+      console.log(`App listening on the port ${this.port}`)
+    })
+  }
+
   private initializeMiddlewares() {
     this.app.use(bodyParser.json())
     this.app.use(helmet())
@@ -22,12 +28,6 @@ class App {
   private initializeControllers(controllers) {
     controllers.forEach(controller => {
       this.app.use('/', controller.router)
-    })
-  }
-
-  public listen() {
-    this.app.listen(this.port, () => {
-      console.log(`App listening on the port ${this.port}`)
     })
   }
 }
