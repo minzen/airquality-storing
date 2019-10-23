@@ -1,5 +1,6 @@
 import * as express from 'express'
 import * as bodyParser from 'body-parser'
+import { MongoHelper } from './utils/mongohelper'
 const helmet = require('helmet')
 
 class App {
@@ -12,6 +13,17 @@ class App {
 
     this.initializeMiddlewares()
     this.initializeControllers(controllers)
+
+    this.connectToDb()
+  }
+
+  public async connectToDb() {
+    try {
+      await MongoHelper.connect()
+      console.info(`Connected to Mongo!`)
+    } catch (err) {
+      console.error(`Unable to connect to Mongo!`, err)
+    }
   }
 
   public listen() {

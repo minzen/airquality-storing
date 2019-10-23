@@ -1,14 +1,8 @@
 import * as express from 'express'
-import Measurement from './measurement'
+import { MongoHelper } from '../utils/mongohelper'
+import Measurement from './Measurement'
 const dotenv = require('dotenv')
 dotenv.config()
-const mongoDbHost = process.env.MONGODB_HOST
-const mongoDbUser = process.env.MONGODB_USER
-const mongoDbPwd = encodeURIComponent(process.env.MONGODB_PWD)
-const mongodbDbName = process.env.MONGODB_DB
-const mongodbDbPort = process.env.MONGODB_PORT
-const mongoDbCollection = process.env.MONGODB_COLLECTION
-const assert = require('assert')
 const { check, validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
 
@@ -29,7 +23,6 @@ function isValidDate(val: string) {
 class MeasurementController {
   public path: string = '/measurements'
   public router = express.Router()
-  private MongoClient = require('mongodb').MongoClient
 
   constructor() {
     this.initializeRoutes()
@@ -50,52 +43,22 @@ class MeasurementController {
     )
   }
 
-  private getDbConnectUrl() {
-    const url =
-      'mongodb://' +
-      mongoDbUser +
-      ':' +
-      mongoDbPwd +
-      '@' +
-      mongoDbHost +
-      ':' +
-      mongodbDbPort +
-      '/' +
-      mongodbDbName +
-      '?authMechanism=DEFAULT&AuthSource=airqualitydb'
-    console.log('Connection URL', url.substring(0, 10), '...')
-    return url
-  }
-
   getAllMeasurements = (
     request: express.Request,
     response: express.Response,
   ) => {
-    const connectUrl = this.getDbConnectUrl()
-    // console.log('connectUrl', connectUrl)
-    this.MongoClient.connect(
-      connectUrl,
-      { useNewUrlParser: true, useUnifiedTopology: true },
-      (err: Error, db) => {
-        assert.equal(null, err)
-        console.log('Connected to the Server', mongoDbHost)
+    console.log('Carrying out a query...')
 
-        console.log('Carrying out a query...')
-        let dbo = db.db(mongodbDbName)
-        dbo
-          .collection(mongoDbCollection)
-          .find({})
-          .toArray((err: Error, result) => {
-            if (err) {
-              throw err
-            }
-            console.log('Results for the query obtained:', result)
-            response.send(result)
-          })
-        console.log('DB connection closed')
-        db.close()
-      },
-    )
+    let db = MongoHelper.client.db(process.env.MONGODB_DB)
+    db.collection(process.env.MONGODB_COLLECTION)
+      .find({})
+      .toArray((err: Error, result) => {
+        if (err) {
+          throw err
+        }
+        console.log('Results for the query obtained:', result)
+        response.send(result)
+      })
   }
 
   createAMeasurement = (
@@ -133,28 +96,18 @@ class MeasurementController {
       humidity: request.body.humidity,
     }
     console.log('Storing measurement', measurement, 'to the database')
-    const connectUrl = this.getDbConnectUrl()
-    // console.log('connectUrl', connectUrl)
-    this.MongoClient.connect(
-      connectUrl,
-      { useNewUrlParser: true, useUnifiedTopology: true },
-      (err: Error, db) => {
-        assert.equal(null, err)
-        console.log('Connected to the Server ', mongoDbHost)
-        console.log('Creating a measurement in the DB')
-        let dbo = db.db(mongodbDbName)
-        dbo
-          .collection(mongoDbCollection)
-          .insertOne(measurement, (err: Error, response: express.Response) => {
-            if (err) {
-              throw err
-            }
-          })
-        console.log('1 measurement inserted')
-        db.close()
-        response.send(measurement)
+    console.log('Creating a measurement in the DB')
+    let db = MongoHelper.client.db(process.env.MONGODB_DB)
+    db.collection(process.env.MONGODB_COLLECTION).insertOne(
+      measurement,
+      (err: Error, response: express.Response) => {
+        if (err) {
+          throw err
+        }
       },
     )
+    console.log('1 measurement inserted')
+    response.send(measurement)
   }
 
   private getTokenFromRequest(request) {
