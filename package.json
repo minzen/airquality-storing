@@ -20,7 +20,7 @@
     "typescript": "^3.6.4"
   },
   "scripts": {
-    "dev": "ts-node ./src/server.ts",
+    "dev": "nodemon './src/server.ts' --exec ts-node",
     "clean": "rimraf coverage build tmp",
     "build": "tsc -p tsconfig.release.json",
     "build:watch": "tsc -w -p tsconfig.release.json",
@@ -46,6 +46,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.3.2",
     "mongoose": "^5.9.2",
+    "nodemon": "^2.0.2",
     "npm-watch": "^0.6.0",
     "saslprep": "^1.0.3",
     "strip-js": "^1.2.0",
