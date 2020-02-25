@@ -1,4 +1,3 @@
-const {GraphQLRequestContext} = require("graphql")
 const dotenv = require('dotenv')
 dotenv.config()
 const {
@@ -18,7 +17,8 @@ const serverPort: number = parseInt(`${process.env.PORT}`, 10) || 4000
 const AUTHORIZATION = 'authorization'
 const BEARER = 'bearer '
 const NOT_AUTHENTICATED = 'not authenticated'
-
+const PRODUCTION = 'production'
+const NODE_ENV = process.env.NODE_ENV
 const createPwdHash = async (password: string) => {
   const saltRounds = 10
   return await bcrypt.hash(password, saltRounds)
@@ -86,6 +86,9 @@ const resolvers = {
       return measurement
     },
     addUser: async (root:any, args:any) => {
+      if (NODE_ENV === PRODUCTION) {
+          return null
+      }
       console.log('username', args.username)
       const inputUsername = stripJs(args.username, 'string')
       console.log('username sanitized', inputUsername)

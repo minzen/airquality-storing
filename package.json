@@ -20,6 +20,7 @@
     "typescript": "^3.6.4"
   },
   "scripts": {
+    "start": "yarn run build && node build/src/server.js",
     "dev": "nodemon './src/server.ts' --exec ts-node",
     "clean": "rimraf coverage build tmp",
     "build": "tsc -p tsconfig.release.json",
