@@ -1,3 +1,4 @@
+const {GraphQLRequestContext} = require("graphql")
 const dotenv = require('dotenv')
 dotenv.config()
 const {
@@ -58,7 +59,7 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     numberOfMeasurements: () => Measurement.collection.countDocuments(),
-    measurements: async (root, args, context) => {
+    measurements: async (root:any, args:any, context:any) => {
       const currentUser = context.currentUser
       if (!currentUser) {
         throw new AuthenticationError(NOT_AUTHENTICATED)
@@ -67,7 +68,7 @@ const resolvers = {
     },
   },
   Mutation: {
-    addMeasurement: async (root, args, context) => {
+    addMeasurement: async (root:any, args:any, context:any) => {
       const currentUser = context.currentUser
       if (!currentUser) {
         throw new AuthenticationError(NOT_AUTHENTICATED)
@@ -84,7 +85,7 @@ const resolvers = {
       console.log(`Measurement ${measurement} saved.`)
       return measurement
     },
-    addUser: async (root, args) => {
+    addUser: async (root:any, args:any) => {
       console.log('username', args.username)
       const inputUsername = stripJs(args.username, 'string')
       console.log('username sanitized', inputUsername)
@@ -102,7 +103,7 @@ const resolvers = {
         return null
       }
     },
-    login: async (root, args) => {
+    login: async (root:any, args:any) => {
       console.log('username', args.username)
       const inputUsername = stripJs(args.username, 'string')
       console.log('username sanitized', inputUsername)
@@ -138,7 +139,7 @@ const resolvers = {
   },
 }
 
-const getTokenFromReq = req => {
+const getTokenFromReq = (req:any) => {
   const authorization = req.get(AUTHORIZATION)
   if (authorization && authorization.toLowerCase().startsWith(BEARER)) {
     return authorization.substring(7)
@@ -161,7 +162,7 @@ const startDb = async () => {
 }
 startDb()
 
-const context = async ({ req }) => {
+const context = async ({ req }: any) => {
   let currentUser = null
   // Get the token from the request
   const token = getTokenFromReq(req)
