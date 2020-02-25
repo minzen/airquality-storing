@@ -1,13 +1,13 @@
 {
-  "name": "node-typescript-boilerplate",
-  "version": "0.0.0",
-  "description": "Minimalistic boilerplate to quick-start Node.js development in TypeScript.",
+  "name": "airquality-measurements",
+  "version": "0.0.1",
+  "description": "Implements an API on top of GraphQL to enable storing of airquality measurements",
   "engines": {
     "node": ">= 10.13 <11"
   },
   "devDependencies": {
     "@types/jest": "^24.0.19",
-    "@types/node": "^10.14.17",
+    "@types/node": "^13.7.4",
     "jest": "^24.9.0",
     "prettier": "~1.18.2",
     "rimraf": "^3.0.0",
@@ -33,6 +33,7 @@
   "dependencies": {
     "@types/express": "^4.17.2",
     "apollo-server": "^2.10.1",
+    "bcrypt": "^4.0.0",
     "body-parser": "^1.19.0",
     "dotenv": "^8.1.0",
     "express": "^4.17.1",
@@ -47,6 +48,7 @@
     "mongoose": "^5.9.2",
     "npm-watch": "^0.6.0",
     "saslprep": "^1.0.3",
+    "strip-js": "^1.2.0",
     "ts-node": "^8.4.1",
     "tslib": "~1.10.0"
   }
