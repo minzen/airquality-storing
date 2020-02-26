@@ -60,10 +60,6 @@ const resolvers = {
   Query: {
     numberOfMeasurements: () => Measurement.collection.countDocuments(),
     measurements: async (root:any, args:any, context:any) => {
-      const currentUser = context.currentUser
-      if (!currentUser) {
-        throw new AuthenticationError(NOT_AUTHENTICATED)
-      }
       return await Measurement.find({})
     },
   },
