@@ -69,7 +69,7 @@ const typeDefs = gql`
   "The type Query contains the existing queries for obtaining stored measurements and users as well as number of measurements"
   type Query {
     """
-    measurements: obtain the stored measurements 
+    measurements: obtain stored measurements (20 newest entries)
     return value: an array of measurements or in case of no measurements, an empty array
     """
     measurements: [Measurement]
@@ -114,7 +114,7 @@ const resolvers = {
   Query: {
     numberOfMeasurements: () => Measurement.collection.countDocuments(),
     measurements: async (root:any, args:any, context:any) => {
-      return await Measurement.find({})
+      return await Measurement.find({}).sort({'measurementDate': -1}).limit(20)
     },
   },
   Mutation: {
