@@ -24,34 +24,88 @@ const createPwdHash = async (password: string) => {
   return await bcrypt.hash(password, saltRounds)
 }
 
-// Store the measurementDate as String as GraphQL does not support date type out of the box
 const typeDefs = gql`
+  "The type Measurement is a single measurement entry containing an ID, date of the measurement as timestamp as well as temperature and humidity as float values"
   type Measurement {
+    """
+    id: identifier of the measurement
+    """
     id: ID!
+    """
+    measurementDate: timestamp of the measurement stored as String as GraphQL does not support date type out of the box
+    """
     measurementDate: String!
+    """
+    temperature: measured value for the temperature in degrees (°C)
+    """
     temperature: Float
+    """
+    humidity: measured value for the humidity as percentage
+    """
     humidity: Float
   }
+  "The type User is a user of the GraphQL API (e.g. adding new messages requires an authentication)"
   type User {
+    """
+    id: identifier of the user
+    """
     id: ID!
+    """
+    username: user's login identifier
+    """
     username: String!
+    """
+    passwordHash: a hash value computed from the user's password
+    """
     passwordHash: String!
   }
+  "The type Token is a String value used in the request headers as authorization bearer for an authenticated user"
   type Token {
+    """
+    value: token as String value
+    """
     value: String!
   }
+  "The type Query contains the existing queries for obtaining stored measurements and users as well as number of measurements"
   type Query {
+    """
+    measurements: obtain the stored measurements 
+    return value: an array of measurements or in case of no measurements, an empty array
+    """
     measurements: [Measurement]
+    """
+    numberOfMeasurements: get the overall count of measurements stored to the system
+    return value: an integer
+    """
     numberOfMeasurements: Int!
+    """
+    users: obtain the stored users
+    """
     users: [User]
   }
+  "The type Mutation contains the existing mutations used to change the state of the system (e.g. adding measurements, users)"
   type Mutation {
+    """
+    addMeasurement: the method takes care of adding a new measurement to the data storage
+    parameters: measurement date (timestamp): String, temperature: float, humidity: float
+    return value: the stored Measurement or null, if the operation fails
+    """
     addMeasurement(
       measurementDate: String!
       temperature: Float
       humidity: Float
     ): Measurement
+    """
+    addUser: the method takes care of adding a new user to the data storage (deactivated in the production mode, as not protected at the moment from access)
+    parameters: username: String, password: String
+    return value: the stored User or null, if the operation fails
+    """
     addUser(username: String!, password: String!): User
+    """
+    login: the method takes care of logging the user in to the system
+    parameters: username: String, password: String
+    return value: Token: String value to be used as the authorization bearer or null if the login is unsuccessful
+    """
     login(username: String!, password: String!): Token
   }
 `
