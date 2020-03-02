@@ -5,6 +5,7 @@ const {
   gql,
   UserInputError,
   AuthenticationError,
+  PubSub
 } = require('apollo-server')
 const stripJs = require('strip-js')
 const mongoose = require('mongoose')
@@ -19,6 +20,8 @@ const BEARER = 'bearer '
 const NOT_AUTHENTICATED = 'not authenticated'
 const PRODUCTION = 'production'
 const NODE_ENV = process.env.NODE_ENV
+const pubsub = new PubSub()
+
 const createPwdHash = async (password: string) => {
   const saltRounds = 10
   return await bcrypt.hash(password, saltRounds)
@@ -107,6 +110,9 @@ const typeDefs = gql`
     return value: Token: String value to be used as the authorization bearer or null if the login is unsuccessful
     """
     login(username: String!, password: String!): Token
+  },
+  type Subscription {
+    measurementAdded: Measurement!
   }
 `
 
@@ -132,6 +138,7 @@ const resolvers = {
         console.log('error when saving a measurement', e)
         throw new UserInputError(e.message, { invalidArgs: args })
       }
+      pubsub.publish('MEASUREMENT_ADDED', { measurementAdded: measurement })
       console.log(`Measurement ${measurement} saved.`)
       return measurement
     },
@@ -190,6 +197,11 @@ const resolvers = {
       }
     },
   },
+  Subscription: {
+    measurementAdded: {
+      subscribe: () => pubsub.asyncIterator('MEASUREMENT_ADDED')
+    }
+  }
 }
 
 const getTokenFromReq = (req:any) => {
@@ -246,6 +258,6 @@ const server = new ApolloServer({
 
 server.listen({ port: serverPort }, () =>
   console.log(
-    `Apollo Server running at http://localhost:${serverPort}/graphql.`,
-  ),
+    `Apollo Server running at http://localhost:${serverPort}/graphql.`
+  )
 )
