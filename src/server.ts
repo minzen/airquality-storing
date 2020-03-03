@@ -5,7 +5,7 @@ const {
   gql,
   UserInputError,
   AuthenticationError,
-  PubSub
+  PubSub,
 } = require('apollo-server')
 const stripJs = require('strip-js')
 const mongoose = require('mongoose')
@@ -110,7 +110,7 @@ const typeDefs = gql`
     return value: Token: String value to be used as the authorization bearer or null if the login is unsuccessful
     """
     login(username: String!, password: String!): Token
-  },
+  }
   type Subscription {
     measurementAdded: Measurement!
   }
@@ -119,12 +119,14 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     numberOfMeasurements: () => Measurement.collection.countDocuments(),
-    measurements: async (root:any, args:any, context:any) => {
-      return await Measurement.find({}).sort({'measurementDate': -1}).limit(20)
+    measurements: async (root: any, args: any, context: any) => {
+      return await Measurement.find({})
+        .sort({ measurementDate: -1 })
+        .limit(20)
     },
   },
   Mutation: {
-    addMeasurement: async (root:any, args:any, context:any) => {
+    addMeasurement: async (root: any, args: any, context: any) => {
       const currentUser = context.currentUser
       if (!currentUser) {
         throw new AuthenticationError(NOT_AUTHENTICATED)
@@ -142,9 +144,9 @@ const resolvers = {
       console.log(`Measurement ${measurement} saved.`)
       return measurement
     },
-    addUser: async (root:any, args:any) => {
+    addUser: async (root: any, args: any) => {
       if (NODE_ENV === PRODUCTION) {
-          return null
+        return null
       }
       console.log('username', args.username)
       const inputUsername = stripJs(args.username, 'string')
@@ -163,7 +165,7 @@ const resolvers = {
         return null
       }
     },
-    login: async (root:any, args:any) => {
+    login: async (root: any, args: any) => {
       console.log('username', args.username)
       const inputUsername = stripJs(args.username, 'string')
       console.log('username sanitized', inputUsername)
@@ -199,12 +201,12 @@ const resolvers = {
   },
   Subscription: {
     measurementAdded: {
-      subscribe: () => pubsub.asyncIterator('MEASUREMENT_ADDED')
-    }
-  }
+      subscribe: () => pubsub.asyncIterator(['MEASUREMENT_ADDED']),
+    },
+  },
 }
 
-const getTokenFromReq = (req:any) => {
+const getTokenFromReq = (req: any) => {
   const authorization = req.get(AUTHORIZATION)
   if (authorization && authorization.toLowerCase().startsWith(BEARER)) {
     return authorization.substring(7)
@@ -227,24 +229,29 @@ const startDb = async () => {
 }
 startDb()
 
-const context = async ({ req }: any) => {
+const context = async ({ req, connection }: any) => {
   let currentUser = null
-  // Get the token from the request
-  const token = getTokenFromReq(req)
-  if (token) {
-    try {
-      const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
-      if (!token || !decodedToken.id) {
-        console.log('missing or invalid token')
-      } else {
-        currentUser = await User.findById(decodedToken.id)
-        // console.log('user', currentUser, ' set as currentUser')
+
+  if (connection) {
+    // check connection for metadata
+    return connection.context
+  } else {
+    // Get the token from the request
+    const token = getTokenFromReq(req)
+    if (token) {
+      try {
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
+        if (!token || !decodedToken.id) {
+          console.log('missing or invalid token')
+        } else {
+          currentUser = await User.findById(decodedToken.id)
+          // console.log('user', currentUser, ' set as currentUser')
+        }
+      } catch (e) {
+        console.log('Error with token handling', e)
       }
-    } catch (e) {
-      console.log('Error with token handling', e)
     }
   }
-
   return { currentUser }
 }
 
@@ -256,8 +263,7 @@ const server = new ApolloServer({
   playground: true,
 })
 
-server.listen({ port: serverPort }, () =>
-  console.log(
-    `Apollo Server running at http://localhost:${serverPort}/graphql.`
-  )
-)
+server.listen().then(({ url, subscriptionsUrl }) => {
+  console.log(`Apollo Server running at ${url}.`)
+  console.log(`Subscriptions ready at ${subscriptionsUrl}`)
+})
